@@ -17,6 +17,7 @@ const todos = [{
 
 //before each test, clear Todo collection
 beforeEach((done) => {
+	process.env.NODE_ENV = 'test';
 	Todo.remove({}).then(() => {
 		return Todo.insertMany(todos);
 	}).then(() => done());
@@ -110,8 +111,69 @@ describe('Get /todos/:id', () => {
 			.expect(404)
 			.end(done);
 		// /todos/123 to pass in as URL;
-
-
-
 	});
+});
+
+describe('delete /todos/:id', () => {
+	it('should remove a todo', (done) => {
+		var id = todos[0]._id.toString()
+		request(app)
+			.delete(`/todos/${id}`)
+			.expect(200)
+			.expect((res) => {
+				expect(res.body.text).toBe('First test todo');
+			})
+			.end((err) => {
+				if (err) {
+					return done(err);
+				}
+			
+				Todo.findById(`${id}`).then((doc) => {
+					expect(doc).toBeFalsy();
+					done();	
+				}).catch((e) => {
+					done(e)	
+				});
+
+				// Todo.find().then((todos) => {
+				// 	expect(todos.length).toBe(1);
+				// 	done();
+				// }).catch((e) => done(e));
+			});
+	});
+
+
+	it('should return 404 if todo not found', (done) => {
+		var id = new ObjectID().toString();
+		request(app)
+			.delete(`/todos/${id}`)
+			.expect(404)
+			.end((err) => {
+				if (err) {
+					return done(err);
+				}
+
+				Todo.find().then((todos) => {
+					expect(todos.length).toBe(2);
+					done();
+				}).catch((err) => done(err));
+			})
+	});
+
+	it('shoudl return 404 if object id is invalid', (done) => {
+		request(app)
+			.delete('/todos/123abc')
+			.expect(404)
+			.end((err) => {
+				if (err) {
+					return done(err);
+				}
+
+				Todo.find().then((todos) => {
+					expect(todos.length).toBe(2);
+					done();
+				}).catch((err) => done(err));
+			});
+	});
+
 });

@@ -88,9 +88,15 @@ app.delete('/todos/:id', (req, res) => {
 //set port 3000 and start server
 //test mlab db server by visiting localhost routes to see if i can communicate with the deployed db server
 
+//if statement prevents the program from listening to the port if 
+//the program is ran in a testing environement, since:
+//the tests would listen to the port on their own
+//this is to prevent "double port listening"
 
-app.listen(port, () => {
-	console.log(`Started on port ${port}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+	app.listen(port, () => {
+		console.log(`Started on port ${port}`);
+	});
 
-module.exports = {app};
+	module.exports = {app};
+}
