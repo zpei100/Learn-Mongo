@@ -9,6 +9,10 @@ var bodyParser = require('body-parser')
 //creates local server
 var app = express();
 
+//process.env.PORT will exist when deployed to heroku,
+//and the server will listen to that port instead
+const port = process.env.PORT || 3000;
+
 //use bodyParser as middle to make changes to request and response
 //before they are handled
 app.use(bodyParser.json());
@@ -60,8 +64,8 @@ app.get('/todos/:id', (req, res) => {
 
 
 
-app.listen(3000, () => {
-	console.log('Started on port 3000');
+app.listen(port, () => {
+	console.log(`Started on port ${port}`);
 });
 
 module.exports = {app};

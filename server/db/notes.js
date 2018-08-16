@@ -4,9 +4,8 @@ const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 
 // make connection
-console.log(1)
+
 mongoose.connect('mongodb://localhost:27017/todoApp');
-console.log(2)
 
 // create a new model for documents, so they share some common fields and structure 
 // mongoose.model returns a constructor function named: todo
