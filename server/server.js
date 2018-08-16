@@ -42,6 +42,13 @@ app.get('/', (req, res) => {
 	res.send('Hello visiter!');
 });
 
+app.get('/todos', (req, res) => {
+	Todo.find().then((docs) => {
+		res.send(docs);
+	}).catch((e) => 
+	res.status(400).send());
+})
+
 app.get('/todos/:id', (req, res) => {
 	var id = req.params.id;
 	if (!ObjectID.isValid(id)) {
