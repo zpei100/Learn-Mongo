@@ -11,7 +11,8 @@ var app = express();
 
 //process.env.PORT will exist when deployed to heroku,
 //and the server will listen to that port instead
-const port = process.env.PORT || 3000;
+var externalPort = process.env.PORT
+const port = 3000;
 
 //use bodyParser as middle to make changes to request and response
 //before they are handled
@@ -63,12 +64,29 @@ app.get('/todos/:id', (req, res) => {
 	}).catch((e) => {
 		res.status(400).send();
 	});
+});
+
+app.delete('/todos/:id', (req, res) => {
+	var id = req.params.id;
+	if (!ObjectID.isValid(id)) {
+		return res.status(404).send();
+	}
+
+	Todo.findByIdAndRemove(id).then((todo) => {
+		if(!todo) {
+			return res.status(404).send();
+		}
+		res.send(todo);
+	}).catch((e) => {
+		res.status(400).send();
+	})
 })
 
 
 
 
-
+//set port 3000 and start server
+//test mlab db server by visiting localhost routes to see if i can communicate with the deployed db server
 
 
 app.listen(port, () => {
