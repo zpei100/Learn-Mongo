@@ -10,7 +10,9 @@ const todos = [{
 	text: 'First test todo'
 }, {
 	_id: new ObjectID(),
-	text: 'Second test todo'
+	text: 'Second test todo',
+	completed:true,
+	completedAt: 333
 }];
 
 
@@ -177,3 +179,88 @@ describe('delete /todos/:id', () => {
 	});
 
 });
+
+
+describe('update todos/id', () => {
+	it('it should update the todo', (done) => {
+		//id for first item
+		//update text, set completed to true
+		var id = todos[0]._id.toString();
+		request(app)
+			.patch(`/todos/${id}`)
+			.send({text: `should be new text`, completed: true})
+			.expect(200)
+			.expect((res) => {
+				expect(res.body.text).toBe('should be new text');
+				expect(res.body.completed).toBe(true);
+				expect(typeof res.body.completedAt).toBe('number');
+			})
+			.end((err) => {
+				if (err) {
+					return done(err)
+				}
+
+				Todo.findById(id).then((todo) => {
+					expect(todo.text).toBe('should be new text')
+					done();
+				}).catch((err) => done(err))
+			})
+	});
+
+	it('should clear completedAt when todo is not completed', (done) => {
+		var id = todos[1]._id.toString();
+		request(app)
+			.patch(`/todos/${id}`)
+			.send({text: `Text should update !!!!!`, completed: false})
+			.expect(200)
+			.expect((res) => {
+				expect(res.body.text).toBe('Text should update !!!!!');
+				expect(res.body.completed).toBe(false);
+				expect(res.body.completedAt).toBeFalsy();
+			})
+			.end((err) => {
+				if (err) {
+					return done(err)
+				}
+
+				Todo.findById(id).then((todo) => {
+					expect(todo.text).toBe('Text should update !!!!!')
+					done();
+				}).catch((err) => done(err))
+			})
+	});
+
+
+	it('should return 404 if todo not found', (done) => {
+		var id = new ObjectID().toString();
+		request(app)
+			.delete(`/todos/${id}`)
+			.expect(404)
+			.end((err) => {
+				if (err) {
+					return done(err);
+				}
+
+				Todo.find().then((todos) => {
+					expect(todos.length).toBe(2);
+					done();
+				}).catch((err) => done(err));
+			})
+	});
+
+	it('shoudl return 404 if object id is invalid', (done) => {
+		request(app)
+			.delete('/todos/123abc')
+			.expect(404)
+			.end((err) => {
+				if (err) {
+					return done(err);
+				}
+
+				Todo.find().then((todos) => {
+					expect(todos.length).toBe(2);
+					done();
+				}).catch((err) => done(err));
+			});
+	});
+})

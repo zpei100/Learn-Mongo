@@ -20,7 +20,8 @@ var _ = require('lodash');
 var app = express();
 
 //use bodyParser as middleware to make changes to request and response
-//before they are handled
+//before they are handled. 
+//I think this calls toJSON to our bodies in req and res
 app.use(bodyParser.json());
 
 //defines what happens when a post request is made to the route: /todos
@@ -128,6 +129,31 @@ app.patch('/todos/:id', (req, res) => {
 		res.status(400).send();
 	})
 });
+
+app.post('/users', (req, res) => {
+
+	var body =_.pick(req.body, ['email', 'password']);	
+	var user = new User(body);
+
+	//even though generateAuthToken has .save() in its definition
+	//it returns a token, and not a promise
+	//therefore if we we initiate with user.save(), this returns a promise, that has resolve value: token
+	//which can then be chained by then(token)
+	user.save().then((user) => {
+		return user.generateAuthToken();
+	}).then((token) => {
+		res.header('x-auth', token).send(user);
+	}).catch((err) => res.status(400).send(err));
+});
+
+app.get('/users', (req, res) => {
+	User.find().then((users) => {
+		res.send(users);
+	}).catch((err) => res.status(400).send(err));
+});
+
+
+
 
 //make app listen to whatever port is appropriate based on process environment
 app.listen(port, () => {
