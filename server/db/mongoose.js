@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 
 mongoose.Promise = global.Promise;
 
-var connectMLab = `mongodb://zpei100:Gmlegend2@ds121312.mlab.com:21312/learn-node-zpei100`
-mongoose.connect(connectMLab || 'mongodb://localhost:27017/todoApp');
+//the server that mongoose connects to depends on the process environment:
+//whehter it is testing, development, or production
+mongoose.connect(process.env.MONGODB_URI);
 
 module.exports = {mongoose}
+

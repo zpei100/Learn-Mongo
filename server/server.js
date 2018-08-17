@@ -1,3 +1,12 @@
+require('./config/config.js');
+
+//process.env.PORT will exist when deployed to heroku,
+//note: this issue is addressed in the config file, using if statements
+//based on process.env.NODE_ENV
+//and the server will listen to that port instead
+var port = process.env.PORT
+
+//importing
 var {mongoose} = require('./db/mongoose.js');
 var {Todo} = require('./models/todo.js');
 var {User} = require('./models/user.js');
@@ -10,12 +19,7 @@ var _ = require('lodash');
 //creates local server
 var app = express();
 
-//process.env.PORT will exist when deployed to heroku,
-//and the server will listen to that port instead
-var externalPort = process.env.PORT
-const port = 3000;
-
-//use bodyParser as middle to make changes to request and response
+//use bodyParser as middleware to make changes to request and response
 //before they are handled
 app.use(bodyParser.json());
 
@@ -115,7 +119,7 @@ app.patch('/todos/:id', (req, res) => {
 	//if we dont use that format, we are just passing in objects
 	//which is confusing
 	//new is the same as returnOriginal -- mongoose wanted to use this ~~
-	Todo.findByIdAndUpdate(id, {$set: {body}}, {new: true}).then((todo) => {
+	Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
 		if (!todo) {
 			return res.status(404).send();
 		}
@@ -123,24 +127,11 @@ app.patch('/todos/:id', (req, res) => {
 	}).catch((err) => {
 		res.status(400).send();
 	})
-
-
 });
 
-
-
-//set port 3000 and start server
-//test mlab db server by visiting localhost routes to see if i can communicate with the deployed db server
-
-//if statement prevents the program from listening to the port if 
-//the program is ran in a testing environement, since:
-//the tests would listen to the port on their own
-//this is to prevent "double port listening"
-
-if (process.env.NODE_ENV !== 'test') {
-	app.listen(externalPort, () => {
-		console.log(`Started on port ${externalPort}`);
-	});
-
-	module.exports = {app};
-}
+//make app listen to whatever port is appropriate based on process environment
+app.listen(port, () => {
+	console.log(`App started on port: ${port}`)
+});
+		
+module.exports = {app};
