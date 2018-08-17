@@ -4,7 +4,8 @@ var {User} = require('./models/user.js');
 var {ObjectID} = require('mongodb');
 
 var express = require('express');
-var bodyParser = require('body-parser')
+var bodyParser = require('body-parser');
+var _ = require('lodash');
 
 //creates local server
 var app = express();
@@ -82,6 +83,49 @@ app.delete('/todos/:id', (req, res) => {
 	})
 })
 
+app.patch('/todos/:id', (req, res) => {
+	var id = req.params.id;
+	if (!ObjectID.isValid(id)) {
+		return res.status(404).send();
+	}
+
+	var body =_.pick(req.body, ['text', 'completed']);
+
+	//pick returns an object that only has the above properties
+	//basically, we are ignoring all other properties and don't want 
+	//to pass them to the server
+	//for example, we dont want the user to send the completedAt value
+	//we should set that, based on when the update is sent
+
+	//if the value is a boolean and it is true:
+	if (_.isBoolean(body.completed) && body.completed) {
+		body.completedAt = new Date().getTime();
+	} else {
+		//if the user sends the value to be something weird, and not the value true
+		//we wanna reset the value to be false
+		body.completed = false;
+		//clears the field / value of completedAt
+		body.completedAt = null;
+	}
+
+	//the way the arguments are passed in does make sense:
+	//it would be like in python: 
+	//set={an object}
+	//new={an object}
+	//if we dont use that format, we are just passing in objects
+	//which is confusing
+	//new is the same as returnOriginal -- mongoose wanted to use this ~~
+	Todo.findByIdAndUpdate(id, {$set: {body}}, {new: true}).then((todo) => {
+		if (!todo) {
+			return res.status(404).send();
+		}
+		res.send(todo);
+	}).catch((err) => {
+		res.status(400).send();
+	})
+
+
+});
 
 
 
@@ -94,8 +138,8 @@ app.delete('/todos/:id', (req, res) => {
 //this is to prevent "double port listening"
 
 if (process.env.NODE_ENV !== 'test') {
-	app.listen(port, () => {
-		console.log(`Started on port ${port}`);
+	app.listen(externalPort, () => {
+		console.log(`Started on port ${externalPort}`);
 	});
 
 	module.exports = {app};
