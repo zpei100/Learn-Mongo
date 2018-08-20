@@ -11,6 +11,7 @@ var {mongoose} = require('./db/mongoose.js');
 var {Todo} = require('./models/todo.js');
 var {User} = require('./models/user.js');
 var {ObjectID} = require('mongodb');
+var {authenticate} = require('./middleware/authenticate.js');
 
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -132,6 +133,7 @@ app.patch('/todos/:id', (req, res) => {
 
 app.post('/users', (req, res) => {
 
+	//create a new user using the email and password fields of the request body
 	var body =_.pick(req.body, ['email', 'password']);	
 	var user = new User(body);
 
@@ -139,9 +141,15 @@ app.post('/users', (req, res) => {
 	//it returns a token, and not a promise
 	//therefore if we we initiate with user.save(), this returns a promise, that has resolve value: token
 	//which can then be chained by then(token)
+
+	//stores the user into the database
 	user.save().then((user) => {
+		//generate token for the user and store [access, token] into user's tokens array
+		//later authorizations do not need password anymore, but instead uses the token to authorize
 		return user.generateAuthToken();
+		//returns resolve(token)
 	}).then((token) => {
+		//god knows what this does....
 		res.header('x-auth', token).send(user);
 	}).catch((err) => res.status(400).send(err));
 });
@@ -153,7 +161,13 @@ app.get('/users', (req, res) => {
 });
 
 
-
+//testground private route
+//defines what happens when client sends a get request to this route
+//middleware function: authenticate fires before the callback. It automatically passes in (req, res, next); The program knows it is middleware
+//see ./middleware/authenticate.js
+app.get('/users/me', authenticate, (req, res) => {
+	res.send(req.user);
+});
 
 //make app listen to whatever port is appropriate based on process environment
 app.listen(port, () => {

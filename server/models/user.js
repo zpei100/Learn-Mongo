@@ -2,6 +2,7 @@ const {mongoose} = require('../db/mongoose.js');
 const validator = require('validator');
 const jwt = require('jsonwebtoken'); 
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 var UserSchema = new mongoose.Schema({
 	email: {
@@ -49,7 +50,9 @@ UserSchema.methods.toJSON = function () {
 
 UserSchema.methods.generateAuthToken = function() {
 	var access = 'auth';
+	//use jwt library to create a token for the document (user)
 	var token = jwt.sign({_id: this._id.toString(), access: access}, 'abc123').toString();
+	//add this token to the tokens array field. They are paired so that each token is for a single 'access'
 	this.tokens = this.tokens.concat([{access, token}]);
 	
 	return this.save().then(() => {
@@ -57,6 +60,44 @@ UserSchema.methods.generateAuthToken = function() {
 	})
 };
 
+//custom define a findByToken method for the user class
+//.method is for instances, .static is for class
+UserSchema.statics.findByToken = function(token) {
+	var decoded;
+
+	try {
+		//decoded is just the original object before the encryption: jwt.sign
+		//by the above definition, it has fields: _id and access
+		decoded = jwt.verify(token, 'abc123');
+	} catch (e) {
+		//ends the findByToken function so it doesn't continue down below and try to find the document
+		//instead, it returns a reject, which will trigger a catch in whatever function that calls it
+		return new Promise((resolve, reject) => {
+			reject();
+		})
+	}
+
+	//if the try was successful, in other words, jwt.verify succeeds, or the user is validated
+	//find the user and return the object
+	return this.findOne({
+		'_id': decoded._id,
+		'tokens.token': token,
+		'tokens.access': 'auth'
+	})
+};
+
+UserSchema.pre('save', function(next) {
+	if (this.isModified('password')) {
+		bcrypt.genSalt(10, (err, salt) => {
+			bcrypt.hash(this.password, salt, (err, hash) => {
+				this.password = hash;
+				next();
+			})
+		});
+	} else {
+		next();
+	}
+})
 //mongoose.model() returns a constructor that follows the UserSchema provided
 var User = mongoose.model('users', UserSchema);
 module.exports = {User}
