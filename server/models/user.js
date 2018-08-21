@@ -86,6 +86,24 @@ UserSchema.statics.findByToken = function(token) {
 	})
 };
 
+UserSchema.statics.findByCredentials = function(email, password) {
+	return this.findOne({'email': email}).then((user) => {
+		if (!user) {
+			return Promise.reject();
+		}
+
+		return new Promise ((resolve, reject) => {
+			bcrypt.compare(password, user.password, (err, res) => {
+				if (res) {
+					resolve(user);
+				} else {
+					reject();
+				}
+			});
+		});
+	});
+};
+
 UserSchema.pre('save', function(next) {
 	if (this.isModified('password')) {
 		bcrypt.genSalt(10, (err, salt) => {
@@ -98,6 +116,7 @@ UserSchema.pre('save', function(next) {
 		next();
 	}
 })
+
 //mongoose.model() returns a constructor that follows the UserSchema provided
 var User = mongoose.model('users', UserSchema);
 module.exports = {User}

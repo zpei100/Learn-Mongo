@@ -149,7 +149,7 @@ app.post('/users', (req, res) => {
 		return user.generateAuthToken();
 		//returns resolve(token)
 	}).then((token) => {
-		//god knows what this does....
+		//sets the header, and sends back user
 		res.header('x-auth', token).send(user);
 	}).catch((err) => res.status(400).send(err));
 });
@@ -168,6 +168,33 @@ app.get('/users', (req, res) => {
 app.get('/users/me', authenticate, (req, res) => {
 	res.send(req.user);
 });
+
+
+app.post('/users/login' , (req, res) => {
+	var body = _.pick(req.body, ['email', 'password']);
+	//server verifies user info. If succeeds, generates a token,
+	//send it to the user along with other things
+	User.findByCredentials(body.email, body.password).then((user) => {
+		return user.generateAuthToken().then((token) => {
+			res.header('x-auth', token).send(user);
+		})
+	}).catch((err) => {
+		res.status(400).send();
+	})
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //make app listen to whatever port is appropriate based on process environment
 app.listen(port, () => {
