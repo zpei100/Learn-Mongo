@@ -117,6 +117,18 @@ UserSchema.pre('save', function(next) {
 	}
 })
 
+//adds a method for user to remove token
+//$pull is a special mongoose operator that pulls out the matching
+//item from an array
+//user.update returns a promise: the updated user
+UserSchema.methods.removeToken = function(token) {
+	return this.update({
+		$pull: {
+			tokens: {token}
+		}
+	})
+};
+
 //mongoose.model() returns a constructor that follows the UserSchema provided
 var User = mongoose.model('users', UserSchema);
 module.exports = {User}
